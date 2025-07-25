@@ -1,0 +1,25 @@
+{
+  "agent_name": "SuperAI",
+  "version": "1.0.0",
+  "max_memory_size": 1000,
+  "max_task_duration": 3600,
+  "log_level": "INFO",
+  "default_model": "local",
+  "enable_sandboxing": true,
+  "max_concurrent_tasks": 5,
+  "supported_languages": ["ru", "en"],
+  "default_language": "ru",
+  "features": {
+    "data_analysis": true,
+    "web_scraping": true,
+    "code_generation": true,
+    "creative_tasks": true,
+    "file_operations": true,
+    "api_integration": true
+  },
+  "performance": {
+    "cache_size": 500,
+    "enable_caching": true,
+    "memory_cleanup_interval": 3600
+  }
+}
