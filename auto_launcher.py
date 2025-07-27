@@ -21,6 +21,7 @@ import json
 import socket
 import subprocess
 from pathlib import Path
+import urllib.request
 
 CONFIG_FILE = "server_config.json"
 APP_FILE = "enhanced_app.py"
@@ -62,30 +63,54 @@ def start_streamlit_app(host, port):
     print(f"Запуск приложения на {host}:{port} ...")
     return subprocess.Popen(cmd)
 
+def wait_for_server(port, timeout=30):
+    url = f"http://localhost:{port}/"
+    start_time = time.time()
+    while time.time() - start_time < timeout:
+        try:
+            with urllib.request.urlopen(url) as resp:
+                if resp.status == 200:
+                    return True
+        except Exception:
+            time.sleep(1)
+    return False
+
 def main():
     config = load_server_config()
     servers = config.get("servers", [])
     attempt = 0
-    max_attempts = 10
+    max_attempts = 20
     while attempt < max_attempts:
         host, port = find_free_server(servers)
         if host and port:
             proc = start_streamlit_app(host, port)
-            try:
-                proc.wait()
-            except KeyboardInterrupt:
-                print("Остановка приложения пользователем.")
+            print(f"Ожидание запуска сервера на http://localhost:{port} ...")
+            if wait_for_server(port, timeout=40):
+                print(f"Сервер успешно запущен: http://localhost:{port}")
+                print(f"BROWSER_URL:http://localhost:{port}")
+                # Ждем завершения процесса
+                try:
+                    proc.wait()
+                except KeyboardInterrupt:
+                    print("Остановка приложения пользователем.")
+                    proc.terminate()
+                    sys.exit(0)
+                print(f"Приложение завершилось. Перезапуск через 3 секунды...")
+                time.sleep(3)
+                attempt += 1
+            else:
+                print(f"Сервер не поднялся на порту {port}, пробуем другой...")
                 proc.terminate()
-                sys.exit(0)
-            # Если приложение завершилось с ошибкой, пробуем другой порт
-            print(f"Приложение завершилось. Перезапуск через 3 секунды...")
-            time.sleep(3)
-            attempt += 1
+                time.sleep(2)
+                attempt += 1
         else:
             print("Нет свободных портов для запуска. Ожидание 5 секунд...")
             time.sleep(5)
             attempt += 1
     print("Не удалось запустить приложение после нескольких попыток.")
     sys.exit(1)
+
+if __name__ == "__main__":
+    main()
 
 
